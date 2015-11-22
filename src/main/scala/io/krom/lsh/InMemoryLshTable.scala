@@ -6,7 +6,7 @@ import collection.mutable.HashMap
 import collection.mutable.HashSet
 import scala.collection.mutable
 
-class InMemoryLshTable(prefix: Option[String] = None) extends LshTable {
+class InMemoryLshTable(prefix: Option[String] = None) extends LshTable(prefix) {
 
   private val index = new HashMap[String, HashSet[String]]()
   private val table = new HashMap[String, (String, String, DenseVector[Double])]()
@@ -35,14 +35,14 @@ class InMemoryLshTable(prefix: Option[String] = None) extends LshTable {
     }
   }
 
-  override def get(hash: String): IndexedSeq[(String, String, DenseVector[Double])] = {
+  override def get(hash: String): List[(String, String, DenseVector[Double])] = {
     val key = createKey(hash)
 
     val items = if (index.keySet.contains(key)) index(key) else new HashSet()
 
     (for {
       item <- items
-    } yield table(item)) (collection.breakOut)
+    } yield table(item)).toList
   }
 }
 

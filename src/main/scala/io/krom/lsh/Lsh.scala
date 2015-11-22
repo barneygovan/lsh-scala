@@ -6,6 +6,7 @@ import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.stats.distributions.Gaussian
 import io.krom.lsh.DistanceFunction._
 
+import scala.collection.immutable.HashMap
 import scala.collection.mutable.{HashSet, PriorityQueue}
 
 
@@ -60,9 +61,12 @@ class Lsh(tables: IndexedSeq[LshTable], projections: IndexedSeq[DenseMatrix[Doub
 
 object Lsh {
   def apply(numBits: Int, numDimensions: Int, numTables: Int, prefix: Option[String] = None,
-            projectionsFilename: Option[String] = None): Lsh = {
+            projectionsFilename: Option[String] = None, storageConfig: Option[HashMap[String, String]] = None): Lsh = {
 
-    val tables = InMemoryLshTable.createTables(numTables, prefix)
+    val tables = storageConfig match {
+      case None => InMemoryLshTable.createTables (numTables, prefix)
+      case Some(config) => RedisLshTable.createTables(numTables, config, prefix)
+    }
     val projections = initializeProjections(numBits, numDimensions, numTables, loadProjectionsData(projectionsFilename))
     new Lsh(tables, projections)
   }

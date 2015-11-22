@@ -2,12 +2,11 @@ package io.krom.lsh
 
 import breeze.linalg.DenseVector
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers._
+import org.scalatest.{Matchers, FunSpec}
 
 import DistanceFunction._
 
-class DistanceFunctionSpec extends FunSpec {
+class DistanceFunctionSpec extends FunSpec with Matchers {
 
   describe("calculating Euclidean distance score") {
     it("should equal 1 over 1 plus the square root of the sum of the squares of the sides") {

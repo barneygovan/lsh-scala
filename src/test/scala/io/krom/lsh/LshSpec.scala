@@ -1,12 +1,14 @@
 package io.krom.lsh
 
 import breeze.linalg.{DenseMatrix, DenseVector}
-import org.scalatest.FunSpec
-import org.scalatest.Matchers._
+import org.scalatest.{Matchers, FunSpec}
 
 import DistanceFunction._
+import redis.embedded.RedisServer
 
-class LshSpec extends FunSpec {
+import scala.collection.immutable.HashMap
+
+class LshSpec extends FunSpec with Matchers {
 
   describe("initializing projections") {
     it("should load from a file if filename is specified") {
@@ -94,6 +96,30 @@ class LshSpec extends FunSpec {
       data.length should equal(1)
       data(0) should equal(testLabel1, 1.0)
     }
+  }
+  describe("store and query the same point with Redis storage") {
+    val numBits = 1
+    val numDimensions = 2
+    val numTables = 3
+    val prefix = "prefix1"
+
+    val redisServer = new RedisServer(1234)
+    redisServer.start()
+
+    val redisConfig = HashMap( "host" -> "localhost", "port" -> "1234")
+
+    val lsh = Lsh(numBits, numDimensions, numTables, Some(prefix), storageConfig = Some(redisConfig))
+
+    val testPoint1 = DenseVector[Double](0.1, 0.2)
+    val testLabel1 = "testData1"
+
+    lsh.store(testPoint1, testLabel1)
+
+    val data = lsh.query(testPoint1, 1, distanceFunction = Euclidean)
+    data.length should equal(1)
+    data(0) should equal(testLabel1, 1.0)
+
+    redisServer.stop()
   }
   describe("store and query with maxItems") {
     it("should return only up to the number of items stored") {

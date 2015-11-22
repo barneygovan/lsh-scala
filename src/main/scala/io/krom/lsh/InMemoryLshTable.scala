@@ -26,7 +26,6 @@ class InMemoryLshTable(prefix: Option[String] = None) extends LshTable {
     val key = createKey(hash)
     val (_, oldKey, _) = table(label)
     val newValue = (label, key, point)
-    println(s"Updating $oldKey to $key")
 
     table(label) = newValue
     if (key != oldKey) {

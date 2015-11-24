@@ -19,3 +19,6 @@ project/plugins/project/
 lsh-scala.iml
 project/project
 project/target
+
+#Stupid Mac stuff
+.DS_Store

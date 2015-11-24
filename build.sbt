@@ -11,5 +11,6 @@ lazy val root = (project in file(".")).settings(
   name := "lsh-scala",
   version := "0.1",
   scalaVersion := "2.11.7",
-  libraryDependencies ++= dependencies
+  libraryDependencies ++= dependencies,
+  coverageEnabled := true
 )

@@ -12,7 +12,7 @@ class LshSpec extends FunSpec with Matchers {
 
   describe("initializing projections") {
     it("should load from a file if filename is specified") {
-      val tmpFile = java.io.File.createTempFile("initProjections_", "testProjections.json")
+      val tmpFile = java.io.File.createTempFile("initProjections_", "testProjections.dat")
       val tmpFilePath = tmpFile.getPath
 
       val data = IndexedSeq( DenseMatrix( (1.0, 2.0), (3.0, 4.0), (5.0, 6.0) ),
@@ -39,7 +39,7 @@ class LshSpec extends FunSpec with Matchers {
 
     }
     it("should fail if data in file does not match dimensions") {
-      val tmpFile = java.io.File.createTempFile("initProjections_", "testProjections.json")
+      val tmpFile = java.io.File.createTempFile("initProjections_", "testProjections.dat")
       val tmpFilePath = tmpFile.getPath
 
       val data = IndexedSeq( DenseMatrix( (1.0, 2.0), (3.0, 4.0), (5.0, 6.0) ),
@@ -73,6 +73,26 @@ class LshSpec extends FunSpec with Matchers {
 
       projections.length should equal(numTables)
       for (projection <- projections) {
+        projection.rows should equal(numBits)
+        projection.cols should equal(numDimensions)
+      }
+    }
+  }
+  describe("pre-generating random projections") {
+    it("should write them to the specified file"){
+      val tmpFile = java.io.File.createTempFile("genProjections_", "testProjections.dat")
+      val tmpFilePath = tmpFile.getPath
+
+      val numBits = 4
+      val numDimensions = 5
+      val numTables = 6
+      Lsh.generateRandomProjections(numBits, numDimensions, numTables, tmpFilePath)
+      val inputStream = new java.io.ObjectInputStream(new java.io.FileInputStream(tmpFile))
+      val generatedData = inputStream.readObject.asInstanceOf[IndexedSeq[DenseMatrix[Double]]]
+      inputStream.close
+
+      generatedData.length should equal(numTables)
+      for (projection <- generatedData) {
         projection.rows should equal(numBits)
         projection.cols should equal(numDimensions)
       }

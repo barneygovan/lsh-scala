@@ -1,7 +1,5 @@
 package io.krom.lsh
 
-import java.io.FileInputStream
-
 import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.stats.distributions.Gaussian
 import io.krom.lsh.DistanceFunction._
@@ -91,14 +89,21 @@ object Lsh {
   }
 
   def loadProjectionsData(projectionsFilename: Option[String]): Option[IndexedSeq[DenseMatrix[Double]]] = projectionsFilename match {
-      case None => None
-      case Some(fn) => {
-        val inputStream = new java.io.ObjectInputStream(new FileInputStream(fn))
-        val projections = inputStream.readObject.asInstanceOf[IndexedSeq[DenseMatrix[Double]]]
-        inputStream.close
-        Some(projections)
-      }
+    case None => None
+    case Some(fn) => {
+      val inputStream = new java.io.ObjectInputStream(new java.io.FileInputStream(fn))
+      val projections = inputStream.readObject.asInstanceOf[IndexedSeq[DenseMatrix[Double]]]
+      inputStream.close
+      Some(projections)
     }
+  }
+
+  def generateRandomProjections(numBits: Int, numDimensions: Int, numTables: Int, projectionsFilename: String): Unit = {
+    val projectionsData = initializeProjections(numBits, numDimensions, numTables)
+    val outputStream = new java.io.ObjectOutputStream(new java.io.FileOutputStream(projectionsFilename))
+    outputStream.writeObject(projectionsData)
+    outputStream.close()
+  }
 
 }
 

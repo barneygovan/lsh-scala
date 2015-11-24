@@ -62,9 +62,8 @@ object RedisLshTable {
   def createTables(numTables: Int, redisConf: HashMap[String, String], prefix: Option[String] = None): IndexedSeq[LshTable] = {
     val redisHost = if (redisConf.contains("host")) redisConf("host") else "localhost"
     val redisPort = if (redisConf.contains("port")) Integer.parseInt(redisConf("port")) else 6379
-    val redisDb = if (redisConf.contains("db")) Integer.parseInt(redisConf("db")) else 0
     for {
-      _ <- 1 to numTables
+      redisDb <- 0 until numTables
     } yield new RedisLshTable(new RedisClient(redisHost, redisPort, redisDb), prefix)
   }
 }

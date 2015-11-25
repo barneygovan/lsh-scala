@@ -2,7 +2,7 @@ package io.krom.lsh
 
 import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.stats.distributions.Gaussian
-import io.krom.lsh.DistanceFunction._
+import io.krom.lsh.DistanceFunction.euclideanDistance
 
 import scala.collection.immutable.HashMap
 import scala.collection.mutable.{HashSet, PriorityQueue}
@@ -16,12 +16,10 @@ class Lsh(tables: IndexedSeq[LshTable], projections: IndexedSeq[DenseMatrix[Doub
     }
   }
 
-  def query(point: DenseVector[Double], maxItems: Int = 25,
-            distanceFunction: DistanceFunction = Euclidean): IndexedSeq[(String, Double)] = {
-    val dfunc = distanceFunction match {
-      case Euclidean => euclideanDistance(_,_)
-      case Cosine => cosineDistance(_,_)
-    }
+  def query(point: DenseVector[Double],
+            maxItems: Int = 25,
+            distanceFunction: (DenseVector[Double],DenseVector[Double]) => Double = euclideanDistance):
+            IndexedSeq[(String, Double)] = {
 
     def isLabelNew(label: String, labelSet: HashSet[String]): Boolean = {
       if (labelSet.contains(label)) {
@@ -37,7 +35,7 @@ class Lsh(tables: IndexedSeq[LshTable], projections: IndexedSeq[DenseMatrix[Doub
       (key, i) <- calculateHashes(point).zipWithIndex
         items = tables(i).get(key)
       (label, _, otherPoint) <- items  if isLabelNew(label, labelSet)
-    } yield (label, dfunc(point, otherPoint))
+    } yield (label, distanceFunction(point, otherPoint))
 
     val heap = new PriorityQueue[(String, Double)]()(Ordering.by(_._2))
     heap ++= results

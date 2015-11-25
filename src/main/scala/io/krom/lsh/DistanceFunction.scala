@@ -2,9 +2,7 @@ package io.krom.lsh
 
 import breeze.linalg.DenseVector
 
-object DistanceFunction extends Enumeration {
-  type DistanceFunction = Value
-  val Euclidean, Cosine = Value
+object DistanceFunction  {
 
   def euclideanDistance(pointX: DenseVector[Double], pointY: DenseVector[Double]): Double = {
     val diff = pointX - pointY

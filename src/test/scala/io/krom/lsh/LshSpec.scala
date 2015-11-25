@@ -112,7 +112,7 @@ class LshSpec extends FunSpec with Matchers {
 
       lsh.store(testPoint1, testLabel1)
 
-      val data = lsh.query(testPoint1, 1, distanceFunction = Euclidean)
+      val data = lsh.query(testPoint1, 1, distanceFunction = euclideanDistance)
       data.length should equal(1)
       data(0) should equal(testLabel1, 1.0)
     }
@@ -135,7 +135,7 @@ class LshSpec extends FunSpec with Matchers {
 
     lsh.store(testPoint1, testLabel1)
 
-    val data = lsh.query(testPoint1, 1, distanceFunction = Euclidean)
+    val data = lsh.query(testPoint1, 1, distanceFunction = euclideanDistance)
     data.length should equal(1)
     data(0) should equal(testLabel1, 1.0)
 

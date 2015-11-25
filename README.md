@@ -140,8 +140,11 @@ val items1 = lsh.query(data)
 val items2 = lsh.query(data, maxItems = 50)
 
 // returns up to 25 items; uses Cosine distance
-val items3 = lsh.query(data, distanceFunction = Cosine)
+val items3 = lsh.query(data, distanceFunction = cosineDistance)
 ```
+
+`query()` accepts any function that maps two `DenseVector[Double]` inputs to a single `Double` output, so you can define
+your own distance measures and use them.
 
 ### Prefixes
 

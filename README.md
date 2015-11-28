@@ -38,6 +38,14 @@ For the test suites you will also need:
 
 ## Installation
 
+Add to `Build.scala` or `build.sbt`
+
+```scala
+libraryDependencies ++= Seq(
+  "io.krom" % "lsh-scala_2.11" % "0.1"
+)
+```
+
 Clone the repository and use in your projects.
 
 TODO: Maven and sbt setup

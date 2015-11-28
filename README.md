@@ -8,6 +8,9 @@ A Locality-Sensitive Hashing Library for Scala with optional Redis storage.
 * [Requirements](#requirements)
 * [Installation](#installation)
 * [Usage](#usage)
+* [Contributing](#contributing)
+* [Changelog](#changelog)
+* [License](#license)
 
 ## Overview
 
@@ -209,3 +212,21 @@ val projectionsFilename = "random_projections.dat"
 
 val lsh = Lsh(numBits, numDimensions, numTables, projectionsFilename = Some(projectionsFilename))
 ```
+
+## Contributing
+
+Contributions of all kinds are always welcome.
+
+New features and bug fixes should be submitted via pull-request.  The preferred way is to fork the repository and submit 
+the PR from there.  All submissions should include tests
+
+Any bug reports or feature requests (or comments or promises of gifts) should be submitted via the 
+[GitHub issues page](https://github.com/barneygovan/lsh-scala/issues).  No request is too big or too small.
+
+## Changelog
+
+All bug fixes and new features for each version are described in the [lsh-scala Changelog](CHANGELOG.md)
+
+## License
+
+lsh-scala is released under the [Apache 2.0 License](LICENSE)

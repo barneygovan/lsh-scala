@@ -12,24 +12,29 @@ class LshSpec extends FunSpec with Matchers {
 
   describe("initializing projections") {
     it("should load from a file if filename is specified") {
-      val tmpFile = java.io.File.createTempFile("initProjections_", "testProjections.dat")
+      val tmpFile =
+        java.io.File.createTempFile("initProjections_", "testProjections.dat")
       val tmpFilePath = tmpFile.getPath
 
-      val data = IndexedSeq( DenseMatrix( (1.0, 2.0), (3.0, 4.0), (5.0, 6.0) ),
-                             DenseMatrix( (7.0, 8.0), (9.0, 10.0), (11.0,12.0) ))
-      val outputStream = new java.io.ObjectOutputStream(new java.io.FileOutputStream(tmpFile))
+      val data = IndexedSeq(
+        DenseMatrix((1.0, 2.0), (3.0, 4.0), (5.0, 6.0)),
+        DenseMatrix((7.0, 8.0), (9.0, 10.0), (11.0, 12.0))
+      )
+      val outputStream =
+        new java.io.ObjectOutputStream(new java.io.FileOutputStream(tmpFile))
       outputStream.writeObject(data)
       outputStream.close()
 
       val fileData = Lsh.loadProjectionsData(Some(tmpFilePath))
 
       fileData should not be (None)
-      fileData.get should equal (data)
+      fileData.get should equal(data)
 
       val numBits = 3
       val numDimensions = 2
       val numTables = 2
-      val projections = Lsh.initializeProjections(numBits, numDimensions, numTables, fileData)
+      val projections =
+        Lsh.initializeProjections(numBits, numDimensions, numTables, fileData)
 
       projections.length should equal(numTables)
       for (projection <- projections) {
@@ -39,37 +44,43 @@ class LshSpec extends FunSpec with Matchers {
 
     }
     it("should fail if data in file does not match dimensions") {
-      val tmpFile = java.io.File.createTempFile("initProjections_", "testProjections.dat")
+      val tmpFile =
+        java.io.File.createTempFile("initProjections_", "testProjections.dat")
       val tmpFilePath = tmpFile.getPath
 
-      val data = IndexedSeq( DenseMatrix( (1.0, 2.0), (3.0, 4.0), (5.0, 6.0) ),
-        DenseMatrix( (7.0, 8.0), (9.0, 10.0), (11.0,12.0) ))
-      val outputStream = new java.io.ObjectOutputStream(new java.io.FileOutputStream(tmpFile))
+      val data = IndexedSeq(
+        DenseMatrix((1.0, 2.0), (3.0, 4.0), (5.0, 6.0)),
+        DenseMatrix((7.0, 8.0), (9.0, 10.0), (11.0, 12.0))
+      )
+      val outputStream =
+        new java.io.ObjectOutputStream(new java.io.FileOutputStream(tmpFile))
       outputStream.writeObject(data)
       outputStream.close
 
       val fileData = Lsh.loadProjectionsData(Some(tmpFilePath))
 
       fileData should not be (None)
-      fileData.get should equal (data)
+      fileData.get should equal(data)
 
       val numBits = 4
       val numDimensions = 5
       val numTables = 6
       intercept[java.io.IOException] {
-        val projections = Lsh.initializeProjections(numBits, numDimensions, numTables, fileData)
+        val projections =
+          Lsh.initializeProjections(numBits, numDimensions, numTables, fileData)
       }
     }
     it("should create projections if no filename is specified") {
       val filename = None
       val fileData = Lsh.loadProjectionsData(filename)
 
-      fileData should be (None)
+      fileData should be(None)
 
       val numBits = 1
       val numDimensions = 2
       val numTables = 3
-      val projections = Lsh.initializeProjections(numBits, numDimensions, numTables, fileData)
+      val projections =
+        Lsh.initializeProjections(numBits, numDimensions, numTables, fileData)
 
       projections.length should equal(numTables)
       for (projection <- projections) {
@@ -79,16 +90,24 @@ class LshSpec extends FunSpec with Matchers {
     }
   }
   describe("pre-generating random projections") {
-    it("should write them to the specified file"){
-      val tmpFile = java.io.File.createTempFile("genProjections_", "testProjections.dat")
+    it("should write them to the specified file") {
+      val tmpFile =
+        java.io.File.createTempFile("genProjections_", "testProjections.dat")
       val tmpFilePath = tmpFile.getPath
 
       val numBits = 4
       val numDimensions = 5
       val numTables = 6
-      Lsh.generateRandomProjections(numBits, numDimensions, numTables, tmpFilePath)
-      val inputStream = new java.io.ObjectInputStream(new java.io.FileInputStream(tmpFile))
-      val generatedData = inputStream.readObject.asInstanceOf[IndexedSeq[DenseMatrix[Double]]]
+      Lsh.generateRandomProjections(
+        numBits,
+        numDimensions,
+        numTables,
+        tmpFilePath
+      )
+      val inputStream =
+        new java.io.ObjectInputStream(new java.io.FileInputStream(tmpFile))
+      val generatedData =
+        inputStream.readObject.asInstanceOf[IndexedSeq[DenseMatrix[Double]]]
       inputStream.close
 
       generatedData.length should equal(numTables)
@@ -126,9 +145,15 @@ class LshSpec extends FunSpec with Matchers {
     val redisServer = new RedisServer(1234)
     redisServer.start()
 
-    val redisConfig = HashMap( "host" -> "localhost", "port" -> "1234")
+    val redisConfig = HashMap("host" -> "localhost", "port" -> "1234")
 
-    val lsh = Lsh(numBits, numDimensions, numTables, Some(prefix), storageConfig = Some(redisConfig))
+    val lsh = Lsh(
+      numBits,
+      numDimensions,
+      numTables,
+      Some(prefix),
+      storageConfig = Some(redisConfig)
+    )
 
     val testPoint1 = DenseVector[Double](0.1, 0.2)
     val testLabel1 = "testData1"
@@ -159,10 +184,11 @@ class LshSpec extends FunSpec with Matchers {
       lsh.store(testPoint, testLabel2)
       lsh.store(testPoint, testLabel3)
 
-      val expectedResult = IndexedSeq((testLabel1,1.0), (testLabel2,1.0), (testLabel3,1.0))
-      val data = lsh.query(testPoint, maxItems=5).sortBy(_._1)
+      val expectedResult =
+        IndexedSeq((testLabel1, 1.0), (testLabel2, 1.0), (testLabel3, 1.0))
+      val data = lsh.query(testPoint, maxItems = 5).sortBy(_._1)
       data.length should equal(3)
-      data should equal (expectedResult)
+      data should equal(expectedResult)
     }
     it("should return no more than the requested number of items") {
       val numBits = 1
@@ -181,7 +207,7 @@ class LshSpec extends FunSpec with Matchers {
       lsh.store(testPoint, testLabel2)
       lsh.store(testPoint, testLabel3)
 
-      val data = lsh.query(testPoint, maxItems=2)
+      val data = lsh.query(testPoint, maxItems = 2)
       data.length should equal(2)
       data(0) should not equal (data(1))
     }
@@ -195,9 +221,9 @@ class LshSpec extends FunSpec with Matchers {
 
       val lsh = Lsh(numBits, numDimensions, numTables, Some(prefix))
 
-      val testPoint = DenseVector(0.1,0.2)
+      val testPoint = DenseVector(0.1, 0.2)
       val testLabel = "testData1"
-      val testUpdatedPoint = DenseVector(0.3,0.4)
+      val testUpdatedPoint = DenseVector(0.3, 0.4)
 
       val expectedResult = IndexedSeq((testLabel, 1.0))
 
@@ -212,18 +238,32 @@ class LshSpec extends FunSpec with Matchers {
       val prefix = "prefix12"
 
       val lshTables = InMemoryLshTable.createTables(numTables, Some(prefix))
-      val lshProjections = IndexedSeq( DenseMatrix( (1.0, 2.0, 3.0, 4.0, 5.0), (1.0, 2.0, 3.0, 4.0, 5.0),
-                                                    (1.0, 2.0, 3.0, 4.0, 5.0), (1.0, 2.0, 3.0, 4.0, 5.0) ),
-                                       DenseMatrix( (1.0, 2.0, 3.0, 4.0, 5.0), (1.0, 2.0, 3.0, 4.0, 5.0),
-                                                    (1.0, 2.0, 3.0, 4.0, 5.0), (1.0, 2.0, 3.0, 4.0, 5.0) ),
-                                       DenseMatrix( (1.0, 2.0, 3.0, 4.0, 5.0), (1.0, 2.0, 3.0, 4.0, 5.0),
-                                                    (1.0, 2.0, 3.0, 4.0, 5.0), (1.0, 2.0, 3.0, 4.0, 5.0) ) )
+      val lshProjections = IndexedSeq(
+        DenseMatrix(
+          (1.0, 2.0, 3.0, 4.0, 5.0),
+          (1.0, 2.0, 3.0, 4.0, 5.0),
+          (1.0, 2.0, 3.0, 4.0, 5.0),
+          (1.0, 2.0, 3.0, 4.0, 5.0)
+        ),
+        DenseMatrix(
+          (1.0, 2.0, 3.0, 4.0, 5.0),
+          (1.0, 2.0, 3.0, 4.0, 5.0),
+          (1.0, 2.0, 3.0, 4.0, 5.0),
+          (1.0, 2.0, 3.0, 4.0, 5.0)
+        ),
+        DenseMatrix(
+          (1.0, 2.0, 3.0, 4.0, 5.0),
+          (1.0, 2.0, 3.0, 4.0, 5.0),
+          (1.0, 2.0, 3.0, 4.0, 5.0),
+          (1.0, 2.0, 3.0, 4.0, 5.0)
+        )
+      )
 
       val lsh = new Lsh(lshTables, lshProjections)
 
-      val testPoint = DenseVector(0.1,0.2,0.3,0.4,0.5)
+      val testPoint = DenseVector(0.1, 0.2, 0.3, 0.4, 0.5)
       val testLabel = "testData1"
-      val testUpdatedPoint = DenseVector(-0.1,-0.2,-0.3,-0.4,-0.5)
+      val testUpdatedPoint = DenseVector(-0.1, -0.2, -0.3, -0.4, -0.5)
 
       val expectedResult = IndexedSeq((testLabel, 1.0))
 

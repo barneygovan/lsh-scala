@@ -6,9 +6,14 @@ import com.redis.RedisClient
 
 import scala.collection.immutable.HashMap
 
-class RedisLshTable(redisdb: RedisClient, prefix: Option[String] = None) extends LshTable(prefix) {
+class RedisLshTable(redisdb: RedisClient, prefix: Option[String] = None)
+    extends LshTable(prefix) {
 
-  override def put(hash: String, label: String, point: DenseVector[Double]): Unit = {
+  override def put(
+      hash: String,
+      label: String,
+      point: DenseVector[Double]
+  ): Unit = {
     val key = createKey(hash)
     val value = (label, key, point.toArray)
 
@@ -18,12 +23,17 @@ class RedisLshTable(redisdb: RedisClient, prefix: Option[String] = None) extends
     }
   }
 
-  override def update(hash: String, label: String, point: DenseVector[Double]): Unit = {
+  override def update(
+      hash: String,
+      label: String,
+      point: DenseVector[Double]
+  ): Unit = {
     val key = createKey(hash)
 
     val item = redisdb.get(label) match {
       case None => return
-      case Some(x:String) => JacksMapper.readValue[(String, String, Array[Double])](x)
+      case Some(x: String) =>
+        JacksMapper.readValue[(String, String, Array[Double])](x)
     }
     val oldKey = item._2
 
@@ -36,7 +46,9 @@ class RedisLshTable(redisdb: RedisClient, prefix: Option[String] = None) extends
     }
   }
 
-  override def get(hash: String): List[(String, String, DenseVector[Double])] = {
+  override def get(
+      hash: String
+  ): List[(String, String, DenseVector[Double])] = {
     val key = createKey(hash)
     val items = redisdb.smembers(key)
 
@@ -50,20 +62,31 @@ class RedisLshTable(redisdb: RedisClient, prefix: Option[String] = None) extends
     for {
       item <- itemDetails.get
       newItem = item match {
-        case Some(x:String) => Some(JacksMapper.readValue[(String, String, Array[Double])](x))
+        case Some(x: String) =>
+          Some(JacksMapper.readValue[(String, String, Array[Double])](x))
         case None => None
       }
       if newItem.isDefined
-    } yield ( newItem.get._1, newItem.get._2, DenseVector(newItem.get._3) )
+    } yield (newItem.get._1, newItem.get._2, DenseVector(newItem.get._3))
   }
 }
 
 object RedisLshTable {
-  def createTables(numTables: Int, redisConf: HashMap[String, String], prefix: Option[String] = None): IndexedSeq[LshTable] = {
-    val redisHost = if (redisConf.contains("host")) redisConf("host") else "localhost"
-    val redisPort = if (redisConf.contains("port")) Integer.parseInt(redisConf("port")) else 6379
+  def createTables(
+      numTables: Int,
+      redisConf: HashMap[String, String],
+      prefix: Option[String] = None
+  ): IndexedSeq[LshTable] = {
+    val redisHost =
+      if (redisConf.contains("host")) redisConf("host") else "localhost"
+    val redisPort =
+      if (redisConf.contains("port")) Integer.parseInt(redisConf("port"))
+      else 6379
     for {
       redisDb <- 0 until numTables
-    } yield new RedisLshTable(new RedisClient(redisHost, redisPort, redisDb), prefix)
+    } yield new RedisLshTable(
+      new RedisClient(redisHost, redisPort, redisDb),
+      prefix
+    )
   }
 }

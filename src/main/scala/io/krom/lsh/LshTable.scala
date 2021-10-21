@@ -10,9 +10,8 @@ abstract class LshTable(prefix: Option[String] = None) {
 
   protected def createKey(hash: String): String = {
     prefix match {
-      case None => hash
+      case None    => hash
       case Some(p) => p + ":" + hash
     }
   }
 }
-

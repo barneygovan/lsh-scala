@@ -19,14 +19,13 @@ lazy val root = (project in file(".")).settings(
     if (isSnapshot.value)
       Some("snapshots" at nexus + "content/repositories/snapshots")
     else
-      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+      Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
   publishMavenStyle := true,
   publishArtifact in Test := false,
   sonatypeProfileName := "io.krom",
   pomIncludeRepository := { _ => false },
-  pomExtra := (
-    <url>https://github.com/barneygovan/lsh-scala</url>
+  pomExtra := (<url>https://github.com/barneygovan/lsh-scala</url>
       <licenses>
         <license>
           <name>Apache 2.0 License</name>

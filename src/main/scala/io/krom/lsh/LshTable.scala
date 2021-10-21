@@ -15,4 +15,3 @@ abstract class LshTable(prefix: Option[String] = None) {
     }
   }
 }
-

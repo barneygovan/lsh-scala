@@ -1,8 +1,9 @@
 //package io.krom.lsh
 //
-//import scala.collection.immutable.HashMap
+//import breeze.linalg.DenseVector
+//import com.redis.RedisClient
 //
-//case class LshEntry( label : String, key : String, point : DenseVector[ Double ] )
+//import scala.collection.immutable.HashMap
 //
 //
 //class RedisLshTable( redisdb : RedisClient, prefix : Option[ String ] = None ) extends LshTable( prefix ) {

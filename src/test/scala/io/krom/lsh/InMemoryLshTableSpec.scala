@@ -1,10 +1,10 @@
 package io.krom.lsh
 
 import breeze.linalg.DenseVector
-import org.scalatest.FunSpec
-import org.scalatest.Matchers._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class InMemoryLshTableSpec extends FunSpec {
+class InMemoryLshTableSpec extends AnyFunSpec with Matchers {
 
   describe("put without prefix") {
     it("should return the value just added") {

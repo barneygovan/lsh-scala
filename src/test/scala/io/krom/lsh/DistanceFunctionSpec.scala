@@ -6,7 +6,6 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class DistanceFunctionSpec extends AnyFunSpec with Matchers {
-
     describe( "calculating Euclidean distance score" ) {
         it( "should equal 1 over 1 plus the square root of the sum of the squares of the sides" ) {
             val point1 = DenseVector[ Double ]( 1.0, 0.0 )

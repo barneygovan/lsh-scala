@@ -1,16 +1,31 @@
 package io.krom.lsh
 
 import breeze.linalg.DenseVector
+import com.redis.RedisClient
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import redis.embedded.RedisServer
 
-class NewInMemoryLshTableSpec extends AnyFunSpec with Matchers {
+
+class NewRedisLshTableSpec extends AnyFunSpec with Matchers with BeforeAndAfterEach {
+
+    val redisPort : Int = 1234
+    val redisDb : Int = 5
+    val redisServer = {
+        val server = new RedisServer( redisPort )
+        server.start()
+    }
+
+    override def beforeEach( ) = {
+        newClient().flushdb
+    }
 
     describe( "put without prefix" ) {
         it( "should return the value just added" ) {
             val entry = LshEntry( "testhashkey", "point1", DenseVector( 0.1, 0.2 ) )
 
-            val table = new NewInMemoryLshTable()
+            val table = new NewRedisLshTable( newClient ) with JsonSerialization
 
             table.put( entry )
             table.get( entry.hash ).length shouldBe 1
@@ -18,7 +33,7 @@ class NewInMemoryLshTableSpec extends AnyFunSpec with Matchers {
         }
 
         it( "should return multiple results when more than one value is added" ) {
-            val table = new NewInMemoryLshTable()
+            val table = new NewRedisLshTable( newClient ) with JsonSerialization
 
             val entry1 = LshEntry( "testhashkey", "point1", DenseVector( 0.1, 0.2 ) )
             val entry2 = LshEntry( "testhashkey", "point2", DenseVector( 0.3, 0.4 ) )
@@ -89,5 +104,10 @@ class NewInMemoryLshTableSpec extends AnyFunSpec with Matchers {
             updateResults.length shouldBe 1
             updateResults.head shouldBe expectedUpdate
         }
+    }
+
+
+    private def newClient( ) : RedisClient = {
+        new RedisClient( "localhost", 1234, redisDb )
     }
 }

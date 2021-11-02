@@ -11,18 +11,18 @@ val dependencies = Seq(
 lazy val root = (project in file(".")).settings(
   name := "lsh-scala",
   organization := "io.krom",
-  version := "0.1",
+  version := "0.1-SNAPSHOT",
   scalaVersion := "2.12.7",
   crossScalaVersions := Seq( "2.11.12", "2.12.7" ),
   libraryDependencies ++= dependencies,
   parallelExecution in Test := false,
-  publishTo := {
-    val nexus = "https://oss.sonatype.org/"
-    if (isSnapshot.value)
-      Some("snapshots" at nexus + "content/repositories/snapshots")
-    else
-      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-  },
+//  publishTo := {
+//    val nexus = "https://oss.sonatype.org/"
+//    if (isSnapshot.value)
+//      Some("snapshots" at nexus + "content/repositories/snapshots")
+//    else
+//      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+//  },
   publishMavenStyle := true,
   publishArtifact in Test := false,
   sonatypeProfileName := "io.krom",

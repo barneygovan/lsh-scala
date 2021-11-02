@@ -67,7 +67,7 @@ object Lsh {
 
         val tables = storageConfig match {
             case None => NewInMemoryLshTable.createTables( numTables, prefix )
-            case Some( config ) => ??? ///RedisLshTable.createTables( numTables, config, prefix )
+            case Some( config ) => NewRedisLshTable.createTables( numTables, config, prefix )
         }
         val projections = initializeProjections( numBits, numDimensions, numTables, loadProjectionsData( projectionsFilename ) )
         new Lsh( tables, projections )

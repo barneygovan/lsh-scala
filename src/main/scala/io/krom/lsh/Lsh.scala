@@ -4,109 +4,147 @@ import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.stats.distributions.Gaussian
 import io.krom.lsh.DistanceFunction.euclideanDistance
 
-import scala.collection.immutable.HashMap
 import scala.collection.mutable.{HashSet, PriorityQueue}
 
+class Lsh(
+    newTables: IndexedSeq[NewLshTable],
+    projections: IndexedSeq[DenseMatrix[Double]]
+) {
 
-class Lsh( newTables : IndexedSeq[ NewLshTable ], projections : IndexedSeq[ DenseMatrix[ Double ] ] ) {
+  def store(point: DenseVector[Double], label: String) {
+    for ((key, i) <- calculateHashes(point).zipWithIndex) {
+      newTables(i).put(LshEntry(key, label, point))
+    }
+  }
 
-    def store( point : DenseVector[ Double ], label : String ) {
-        for ( (key, i) <- calculateHashes( point ).zipWithIndex ) {
-            newTables( i ).put( LshEntry( key, label, point ) )
-        }
+  def query(
+      point: DenseVector[Double],
+      maxItems: Int = 25,
+      distanceFunction: (DenseVector[Double], DenseVector[Double]) => Double =
+        euclideanDistance
+  ): IndexedSeq[(String, Double)] = {
+
+    val labelSet = new HashSet[String]()
+
+    val results2 = {
+      calculateHashes(point).zipWithIndex
+        .map(t => newTables(t._2).get(t._1))
+        .flatMap(x => x.filter(z => isLabelNew(z.label, labelSet)))
+        .map(x => (x.label, distanceFunction(point, x.point)))
     }
 
-    def query( point : DenseVector[ Double ],
-               maxItems : Int = 25,
-               distanceFunction : (DenseVector[ Double ], DenseVector[ Double ]) => Double = euclideanDistance ) : IndexedSeq[ (String, Double) ] = {
+    val heap = new PriorityQueue[(String, Double)]()(Ordering.by(_._2))
+    heap ++= results2
+    heap.take(maxItems).toIndexedSeq
+  }
 
-        val labelSet = new HashSet[ String ]()
-
-        val results2 = {
-            calculateHashes( point )
-              .zipWithIndex
-              .map( t => newTables( t._2 ).get( t._1 ) )
-              .flatMap( x => x.filter( z => isLabelNew( z.label, labelSet ) ) )
-              .map( x => (x.label, distanceFunction( point, x.point )) )
-        }
-
-        val heap = new PriorityQueue[ (String, Double) ]()( Ordering.by( _._2 ) )
-        heap ++= results2
-        heap.take( maxItems ).toIndexedSeq
+  def update(point: DenseVector[Double], label: String) {
+    for ((key, i) <- calculateHashes(point).zipWithIndex) {
+      newTables(i).update(LshEntry(key, label, point))
     }
+  }
 
-    def update( point : DenseVector[ Double ], label : String ) {
-        for ( (key, i) <- calculateHashes( point ).zipWithIndex ) {
-            newTables( i ).update( LshEntry( key, label, point ) )
-        }
-    }
+  private def calculateHashes(
+      point: DenseVector[Double]
+  ): IndexedSeq[String] = {
+    for {
+      projection <- projections
+    } yield (projection * point)
+      .map((x: Double) => if (x > 0.0) "1" else "0")
+      .toArray
+      .mkString
+  }
 
-    private def calculateHashes( point : DenseVector[ Double ] ) : IndexedSeq[ String ] = {
-        for {
-            projection <- projections
-        } yield ( projection * point ).map( ( x : Double ) => if ( x > 0.0 ) "1" else "0" ).toArray.mkString
+  private def isLabelNew(label: String, labelSet: HashSet[String]): Boolean = {
+    if (labelSet.contains(label)) {
+      false
+    } else {
+      labelSet += label
+      true
     }
-
-    private def isLabelNew( label : String, labelSet : HashSet[ String ] ) : Boolean = {
-        if ( labelSet.contains( label ) ) {
-            false
-        } else {
-            labelSet += label
-            true
-        }
-    }
+  }
 }
 
 object Lsh {
-    def apply( numBits : Int,
-               numDimensions : Int,
-               numTables : Int,
-               prefix : Option[ String ] = None,
-               projectionsFilename : Option[ String ] = None,
-               storageConfig : Option[ HashMap[ String, String ] ] = None ) : Lsh = {
+  def apply(
+      numBits: Int,
+      numDimensions: Int,
+      numTables: Int,
+      prefix: Option[String] = None,
+      projectionsFilename: Option[String] = None,
+      storageConfig: Option[Map[String, String]] = None
+  ): Lsh = {
 
-        val tables = storageConfig match {
-            case None => NewInMemoryLshTable.createTables( numTables, prefix )
-            case Some( config ) => NewRedisLshTable.createTables( numTables, config, prefix )
-        }
-        val projections = initializeProjections( numBits, numDimensions, numTables, loadProjectionsData( projectionsFilename ) )
-        new Lsh( tables, projections )
+    val tables = storageConfig match {
+      case None         => InMemoryLshTable.createTables(numTables, prefix)
+      case Some(config) => RedisLshTable.createTables(numTables, config, prefix)
+    }
+    val projections = initializeProjections(
+      numBits,
+      numDimensions,
+      numTables,
+      loadProjectionsData(projectionsFilename)
+    )
+    new Lsh(tables, projections)
+  }
+
+  def initializeProjections(
+      numBits: Int,
+      numDimensions: Int,
+      numTables: Int,
+      projectionsData: Option[IndexedSeq[DenseMatrix[Double]]] = None
+  ): IndexedSeq[DenseMatrix[Double]] = {
+    projectionsData match {
+      case None => {
+        val g = Gaussian(0.0, 1.0)
+        for {
+          _ <- 1 to numTables
+        } yield new DenseMatrix(
+          numBits,
+          numDimensions,
+          g.sample(numBits * numDimensions).toArray
+        )
+      }
+      case Some(matrices) => {
+        for {
+          matrix <- matrices
+          if matrix.rows != numBits && matrix.cols != numDimensions
+        } throw new java.io.IOException(
+          s"Provided matrix has ${matrix.rows} rows and ${matrix.cols} instead of $numBits and $numDimensions"
+        )
+        matrices
+      }
+    }
+  }
+
+  def loadProjectionsData(
+      projectionsFilename: Option[String]
+  ): Option[IndexedSeq[DenseMatrix[Double]]] =
+    projectionsFilename match {
+      case None => None
+      case Some(fn) => {
+        val inputStream =
+          new java.io.ObjectInputStream(new java.io.FileInputStream(fn))
+        val projections =
+          inputStream.readObject.asInstanceOf[IndexedSeq[DenseMatrix[Double]]]
+        inputStream.close
+        Some(projections)
+      }
     }
 
-    def initializeProjections( numBits : Int, numDimensions : Int, numTables : Int,
-                               projectionsData : Option[ IndexedSeq[ DenseMatrix[ Double ] ] ] = None ) : IndexedSeq[ DenseMatrix[ Double ] ] = {
-        projectionsData match {
-            case None => {
-                val g = Gaussian( 0.0, 1.0 )
-                for {
-                    _ <- 1 to numTables
-                } yield new DenseMatrix( numBits, numDimensions, g.sample( numBits * numDimensions ).toArray )
-            }
-            case Some( matrices ) => {
-                for {
-                    matrix <- matrices
-                    if matrix.rows != numBits && matrix.cols != numDimensions
-                } throw new java.io.IOException( s"Provided matrix has ${matrix.rows} rows and ${matrix.cols} instead of $numBits and $numDimensions" )
-                matrices
-            }
-        }
-    }
-
-    def loadProjectionsData( projectionsFilename : Option[ String ] ) : Option[ IndexedSeq[ DenseMatrix[ Double ] ] ] = projectionsFilename match {
-        case None => None
-        case Some( fn ) => {
-            val inputStream = new java.io.ObjectInputStream( new java.io.FileInputStream( fn ) )
-            val projections = inputStream.readObject.asInstanceOf[ IndexedSeq[ DenseMatrix[ Double ] ] ]
-            inputStream.close
-            Some( projections )
-        }
-    }
-
-    def generateRandomProjections( numBits : Int, numDimensions : Int, numTables : Int, projectionsFilename : String ) : Unit = {
-        val projectionsData = initializeProjections( numBits, numDimensions, numTables )
-        val outputStream = new java.io.ObjectOutputStream( new java.io.FileOutputStream( projectionsFilename ) )
-        outputStream.writeObject( projectionsData )
-        outputStream.close()
-    }
+  def generateRandomProjections(
+      numBits: Int,
+      numDimensions: Int,
+      numTables: Int,
+      projectionsFilename: String
+  ): Unit = {
+    val projectionsData =
+      initializeProjections(numBits, numDimensions, numTables)
+    val outputStream = new java.io.ObjectOutputStream(
+      new java.io.FileOutputStream(projectionsFilename)
+    )
+    outputStream.writeObject(projectionsData)
+    outputStream.close()
+  }
 
 }

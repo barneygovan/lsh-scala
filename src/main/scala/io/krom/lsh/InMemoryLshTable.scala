@@ -7,7 +7,7 @@ object InMemoryLshTable {
   def createTables(
       numTables: Int,
       prefix: Option[String] = None
-  ): IndexedSeq[NewLshTable] = {
+  ): IndexedSeq[LshTable] = {
     for {
       _ <- 1 to numTables
     } yield new InMemoryLshTable(prefix)
@@ -15,7 +15,7 @@ object InMemoryLshTable {
 }
 
 class InMemoryLshTable(override protected val prefix: Option[String] = None)
-    extends NewLshTable {
+    extends LshTable {
 
   private val index = new HashMap[String, HashSet[String]]()
   private val table = new HashMap[String, LshEntry]()

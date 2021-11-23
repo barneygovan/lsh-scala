@@ -7,13 +7,13 @@ import io.krom.lsh.DistanceFunction.euclideanDistance
 import scala.collection.mutable.{HashSet, PriorityQueue}
 
 class Lsh(
-    newTables: IndexedSeq[NewLshTable],
-    projections: IndexedSeq[DenseMatrix[Double]]
+  tables: IndexedSeq[LshTable],
+  projections: IndexedSeq[DenseMatrix[Double]]
 ) {
 
   def store(point: DenseVector[Double], label: String) {
     for ((key, i) <- calculateHashes(point).zipWithIndex) {
-      newTables(i).put(LshEntry(key, label, point))
+      tables( i ).put( LshEntry( key, label, point ) )
     }
   }
 
@@ -28,7 +28,7 @@ class Lsh(
 
     val results2 = {
       calculateHashes(point).zipWithIndex
-        .map(t => newTables(t._2).get(t._1))
+        .map(t => tables( t._2 ).get( t._1 ) )
         .flatMap(x => x.filter(z => isLabelNew(z.label, labelSet)))
         .map(x => (x.label, distanceFunction(point, x.point)))
     }
@@ -40,7 +40,7 @@ class Lsh(
 
   def update(point: DenseVector[Double], label: String) {
     for ((key, i) <- calculateHashes(point).zipWithIndex) {
-      newTables(i).update(LshEntry(key, label, point))
+      tables( i ).update( LshEntry( key, label, point ) )
     }
   }
 

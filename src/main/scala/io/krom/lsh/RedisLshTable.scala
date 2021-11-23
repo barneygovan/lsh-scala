@@ -7,7 +7,7 @@ object RedisLshTable {
       numTables: Int,
       redisConf: Map[String, String],
       prefix: Option[String] = None
-  ): IndexedSeq[NewLshTable] = {
+  ): IndexedSeq[LshTable] = {
     val redisHost =
       if (redisConf.contains("host")) redisConf("host") else "localhost"
     val redisPort =
@@ -34,7 +34,7 @@ object RedisLshTable {
 abstract class RedisLshTable(
     redisdb: RedisClient,
     val prefix: Option[String] = None
-) extends NewLshTable
+) extends LshTable
     with Serialization {
 
   override def put(entry: LshEntry): Unit = {

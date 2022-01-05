@@ -1,12 +1,14 @@
 package io.krom.lsh
 
-import breeze.linalg.DenseVector
+trait LshTable {
 
-abstract class LshTable(prefix: Option[String] = None) {
+  protected val prefix: Option[String]
 
-  def put(hash: String, label: String, point: DenseVector[Double])
-  def get(hash: String): List[(String, String, DenseVector[Double])]
-  def update(hash: String, label: String, point: DenseVector[Double])
+  def put(entry: LshEntry): Unit
+
+  def update(entry: LshEntry)
+
+  def get(hash: String): List[LshEntry]
 
   protected def createKey(hash: String): String = {
     prefix match {
@@ -14,4 +16,5 @@ abstract class LshTable(prefix: Option[String] = None) {
       case Some(p) => p + ":" + hash
     }
   }
+
 }

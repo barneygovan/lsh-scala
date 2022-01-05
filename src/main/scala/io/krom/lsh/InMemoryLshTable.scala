@@ -1,56 +1,7 @@
 package io.krom.lsh
 
-import breeze.linalg.DenseVector
-
-import collection.mutable.HashMap
-import collection.mutable.HashSet
 import scala.collection.mutable
-
-class InMemoryLshTable(prefix: Option[String] = None) extends LshTable(prefix) {
-
-  private val index = new HashMap[String, HashSet[String]]()
-  private val table =
-    new HashMap[String, (String, String, DenseVector[Double])]()
-
-  override def put(hash: String, label: String, point: DenseVector[Double]) = {
-    val key = createKey(hash)
-    val value = (label, key, point)
-
-    if (!index.keySet.contains(key)) index(key) = new HashSet[String]()
-    index(key) += label
-    table(label) = value
-  }
-
-  override def update(
-      hash: String,
-      label: String,
-      point: DenseVector[Double]
-  ) = {
-    val key = createKey(hash)
-    val (_, oldKey, _) = table(label)
-    val newValue = (label, key, point)
-
-    table(label) = newValue
-    if (key != oldKey) {
-      index(oldKey) -= label
-      if (!index.keySet.contains(key))
-        index(key) = new mutable.HashSet[String]()
-      index(key) += label
-    }
-  }
-
-  override def get(
-      hash: String
-  ): List[(String, String, DenseVector[Double])] = {
-    val key = createKey(hash)
-
-    val items = if (index.keySet.contains(key)) index(key) else new HashSet()
-
-    (for {
-      item <- items
-    } yield table(item)).toList
-  }
-}
+import scala.collection.mutable.{HashMap, HashSet}
 
 object InMemoryLshTable {
   def createTables(
@@ -60,5 +11,42 @@ object InMemoryLshTable {
     for {
       _ <- 1 to numTables
     } yield new InMemoryLshTable(prefix)
+  }
+}
+
+class InMemoryLshTable(override protected val prefix: Option[String] = None)
+    extends LshTable {
+
+  private val index = new HashMap[String, HashSet[String]]()
+  private val table = new HashMap[String, LshEntry]()
+
+  override def put(entry: LshEntry): Unit = {
+    val value = entry.copy(hash = createKey(entry.hash))
+
+    if (!index.keySet.contains(value.hash))
+      index(value.hash) = new HashSet[String]()
+    index(value.hash) += entry.label
+    table(value.label) = value
+  }
+
+  override def update(entry: LshEntry): Unit = {
+    val oldValue = table(entry.label)
+    val newValue = entry.copy(hash = createKey(entry.hash))
+
+    table(entry.label) = newValue
+    if (newValue.hash != oldValue.hash) {
+      index(oldValue.hash) -= entry.label
+      if (!index.keySet.contains(newValue.hash))
+        index(newValue.hash) = new mutable.HashSet[String]()
+      index(newValue.hash) += entry.label
+    }
+  }
+
+  override def get(hash: String): List[LshEntry] = {
+    val key = createKey(hash)
+    val items = if (index.keySet.contains(key)) index(key) else new HashSet()
+    (for {
+      item <- items
+    } yield table(item)).toList
   }
 }

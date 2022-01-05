@@ -1,14 +1,14 @@
 package io.krom.lsh
 
 import breeze.linalg.{DenseMatrix, DenseVector}
-import org.scalatest.{Matchers, FunSpec}
-
-import DistanceFunction._
+import io.krom.lsh.DistanceFunction._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import redis.embedded.RedisServer
 
 import scala.collection.immutable.HashMap
 
-class LshSpec extends FunSpec with Matchers {
+class LshSpec extends AnyFunSpec with Matchers {
 
   describe("initializing projections") {
     it("should load from a file if filename is specified") {

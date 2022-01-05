@@ -4,17 +4,16 @@ import breeze.linalg.{DenseMatrix, DenseVector}
 import breeze.stats.distributions.Gaussian
 import io.krom.lsh.DistanceFunction.euclideanDistance
 
-import scala.collection.immutable.HashMap
 import scala.collection.mutable.{HashSet, PriorityQueue}
 
 class Lsh(
-    tables: IndexedSeq[LshTable],
-    projections: IndexedSeq[DenseMatrix[Double]]
+  tables: IndexedSeq[LshTable],
+  projections: IndexedSeq[DenseMatrix[Double]]
 ) {
 
   def store(point: DenseVector[Double], label: String) {
     for ((key, i) <- calculateHashes(point).zipWithIndex) {
-      tables(i).put(key, label, point)
+      tables( i ).put( LshEntry( key, label, point ) )
     }
   }
 
@@ -25,30 +24,23 @@ class Lsh(
         euclideanDistance
   ): IndexedSeq[(String, Double)] = {
 
-    def isLabelNew(label: String, labelSet: HashSet[String]): Boolean = {
-      if (labelSet.contains(label)) {
-        false
-      } else {
-        labelSet += label
-        true
-      }
+    val labelSet = new HashSet[String]()
+
+    val results2 = {
+      calculateHashes(point).zipWithIndex
+        .map(t => tables( t._2 ).get( t._1 ) )
+        .flatMap(x => x.filter(z => isLabelNew(z.label, labelSet)))
+        .map(x => (x.label, distanceFunction(point, x.point)))
     }
 
-    val labelSet = new HashSet[String]()
-    val results = for {
-      (key, i) <- calculateHashes(point).zipWithIndex
-      items = tables(i).get(key)
-      (label, _, otherPoint) <- items if isLabelNew(label, labelSet)
-    } yield (label, distanceFunction(point, otherPoint))
-
     val heap = new PriorityQueue[(String, Double)]()(Ordering.by(_._2))
-    heap ++= results
+    heap ++= results2
     heap.take(maxItems).toIndexedSeq
   }
 
   def update(point: DenseVector[Double], label: String) {
     for ((key, i) <- calculateHashes(point).zipWithIndex) {
-      tables(i).update(key, label, point)
+      tables( i ).update( LshEntry( key, label, point ) )
     }
   }
 
@@ -62,6 +54,15 @@ class Lsh(
       .toArray
       .mkString
   }
+
+  private def isLabelNew(label: String, labelSet: HashSet[String]): Boolean = {
+    if (labelSet.contains(label)) {
+      false
+    } else {
+      labelSet += label
+      true
+    }
+  }
 }
 
 object Lsh {
@@ -71,7 +72,7 @@ object Lsh {
       numTables: Int,
       prefix: Option[String] = None,
       projectionsFilename: Option[String] = None,
-      storageConfig: Option[HashMap[String, String]] = None
+      storageConfig: Option[Map[String, String]] = None
   ): Lsh = {
 
     val tables = storageConfig match {
